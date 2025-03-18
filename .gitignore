@@ -2,4 +2,10 @@ logs/
 venv/
 scripts/
 __pycache__/
+
+# Model files
 models/
+bert-checkpoints/
+
+# Config files
+*.yaml
