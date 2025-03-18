@@ -3,8 +3,8 @@ import os
 
 from datasets import Dataset
 from transformers import (
+    AutoModelForTokenClassification,
     AutoTokenizer,
-    BertForTokenClassification,
     DataCollatorForTokenClassification,
     Trainer,
     TrainingArguments,
@@ -31,7 +31,6 @@ class TastyModel:
     """
 
     def __init__(self, config):
-
         self.config = config
         bert_type = self.config["bert_type"]
         model_name_or_path = (
@@ -53,12 +52,15 @@ class TastyModel:
             True if self.config["model_name_or_path"] is not None else False
         )
 
-        model_class = BertForTokenClassification
+        model_class = AutoModelForTokenClassification
+        # model_class = BertForTokenClassification
 
         model = model_class.from_pretrained(
             model_name_or_path,
             num_labels=len(self.config["label2id"]),
-            ignore_mismatched_sizes=ignore_mismatched_sizes,
+            ignore_mismatched_sizes=(
+                ignore_mismatched_sizes if "dslim" in bert_type else True
+            ),
             label2id=label2id,
             id2label=id2label,
             classifier_dropout=0.2,

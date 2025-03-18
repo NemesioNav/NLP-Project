@@ -34,7 +34,7 @@ CONFIG = {
     "num_of_tokens": 128,
     "only_first_token": True,
     "training_args": {
-        "output_dir": "./models/bert-checkpoints",
+        "output_dir": None,
         "learning_rate": 2e-5,
         "per_device_train_batch_size": 16,
         "per_device_eval_batch_size": 32,

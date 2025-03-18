@@ -29,6 +29,7 @@ def cross_validate(args):
 
     CONFIG["bert_type"] = args.bert_type
     CONFIG["model_name_or_path"] = args.model_name_or_path
+    CONFIG["training_args"]["output_dir"] = f"./models/{args.bert_type}"
     CONFIG["use_crf"] = args.use_crf
     CONFIG["training_args"]["seed"] = args.seed
 
@@ -49,7 +50,8 @@ def cross_validate(args):
         print(results)
         cross_val_results[fold_id] = results
 
-    with open(f"./res/{args.bert_type}_cross_val_results.json", "w") as json_file:
+    sub_res_folder = args.bert_type.split("/")[-1]
+    with open(f"./res/{sub_res_folder}_cross_val_results.json", "w") as json_file:
         json.dump(cross_val_results, json_file, indent=4)
 
     # aggregate and print results
