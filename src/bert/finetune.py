@@ -2,10 +2,9 @@ import argparse
 import json
 
 import numpy as np
-from sklearn.model_selection import KFold
-
 from BERT_model import TastyModel
 from BERT_utils import CONFIG
+from sklearn.model_selection import KFold
 from utils import ENTITIES, prepare_data
 
 

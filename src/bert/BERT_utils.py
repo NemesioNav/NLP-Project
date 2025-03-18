@@ -1,6 +1,24 @@
 import re
-from utils import NLP, ENTITIES, NEWLINE_CHAR
 
+import spacy
+
+NLP = spacy.load("en_core_web_sm")
+
+ENTITIES = [
+    "FOOD",
+    "QUANTITY",
+    "UNIT",
+    "PROCESS",
+    "PHYSICAL_QUALITY",
+    "COLOR",
+    "TASTE",
+    "PURPOSE",
+    "PART",
+    "TRADE_NAME",
+    "DIET",
+    "EXAMPLE",
+]
+NEWLINE_CHAR = "."
 
 LABEL2ID = {"O": 0}
 idx = 1
@@ -15,48 +33,55 @@ CONFIG = {
     "model_name_or_path": None,
     "num_of_tokens": 128,
     "only_first_token": True,
-
     "training_args": {
-        "output_dir": './bert-checkpoints',
+        "output_dir": None,
         "learning_rate": 2e-5,
         "per_device_train_batch_size": 16,
         "per_device_eval_batch_size": 32,
         "num_train_epochs": 30,
         "weight_decay": 0.01,
     },
-
-    "label2id": LABEL2ID
+    "label2id": LABEL2ID,
 }
 
 
 def check_if_entity_correctly_began(entity, prev_entity):
     """
-    This function checks if "I-" entity is preceded with "B-" or "I-". For
-    example, "I-FOOD" should not happen after "O" or after "B-QUANT".
-    :param entity:
-    :param prev_entity:
-    :return: bool
+    Checks if "I-" entity is preceded with "B-" or "I-" of the same entity type.
+
+    Arguments:
+        entity (str): Current entity label
+        prev_entity (str): Previous entity label
+
+    Returns:
+        bool: True if the entity is correctly started, False otherwise
     """
-    if "I-" in entity and re.sub(r"[BI]-", "", entity) != \
-            re.sub(r"[BI]-", "", prev_entity):
+    if "I-" in entity and re.sub(r"[BI]-", "", entity) != re.sub(
+        r"[BI]-", "", prev_entity
+    ):
         return False
     return True
 
 
-def token_to_entity_predictions(text_split_words, text_split_tokens,
-                                token_labels, id2label):
+def token_to_entity_predictions(
+    text_split_words, text_split_tokens, token_labels, id2label
+):
     """
-    Transform token (subword) predictions into word predictions.
-    :param text_split_words: list of words from one recipe ingredients,
-    eg. ["2", "carrots"] (the ones that go to tokenizer)
-    :param text_split_tokens: list of tokens from one recipe ingredients, eg.
-    ["2", "car", "##rots"] (the ones that arise from input decoding)
-    :param token_labels: list of labels associated with each token from
-    text_split_tokens
-    :param id2label: a mapping from ids (0, 1, ...) to labels ("B-FOOD",
-    "I-FOOD", ...)
-    :return: a list of entities associated with each word from text_split_words,
-    ie. entities extracted from recipe ingredients
+    Transforms token (subword) predictions into word predictions.
+
+    Arguments:
+        text_split_words (list): List of words from one recipe ingredients,
+            e.g. ["2", "carrots"] (the ones that go to tokenizer)
+        text_split_tokens (list): List of tokens from one recipe ingredients,
+            e.g. ["2", "car", "##rots"] (the ones that arise from input decoding)
+        token_labels (list): List of labels associated with each token from
+            text_split_tokens
+        id2label (dict): A mapping from ids (0, 1, ...) to labels ("B-FOOD",
+            "I-FOOD", ...)
+
+    Returns:
+        list: A list of entities associated with each word from text_split_words,
+            i.e. entities extracted from recipe ingredients
     """
 
     word_idx = 0
@@ -70,17 +95,20 @@ def token_to_entity_predictions(text_split_words, text_split_tokens,
             continue
         word_from_tokens += re.sub(r"^##", "", token)
         # take the entity associated with the first token (subword)
-        word_entity = id2label[token_label] if word_entity == "" \
-            else word_entity
+        word_entity = id2label[token_label] if word_entity == "" else word_entity
 
-        if word_from_tokens == text_split_words[word_idx] or \
-                word_from_tokens == "[UNK]":
+        if (
+            word_from_tokens == text_split_words[word_idx]
+            or word_from_tokens == "[UNK]"
+        ):
             word_idx += 1
             # replace entities containing "I-" that do not have a predecessor
             # with "B-"
-            word_entity = "O" if not \
-                check_if_entity_correctly_began(word_entity, prev_word_entity) \
+            word_entity = (
+                "O"
+                if not check_if_entity_correctly_began(word_entity, prev_word_entity)
                 else word_entity
+            )
             word_entities.append(word_entity)
             word_from_tokens = ""
             prev_word_entity = word_entity
@@ -89,24 +117,30 @@ def token_to_entity_predictions(text_split_words, text_split_tokens,
     return word_entities
 
 
-def tokenize_and_align_labels(ingredients, entities, tokenizer, max_length,
-                              label2id, only_first_token=True):
+def tokenize_and_align_labels(
+    ingredients, entities, tokenizer, max_length, label2id, only_first_token=True
+):
     """
-    :param ingredients: list of lists of words from recipe ingredients
-    :param entities: list of lists of entities from recipe ingredients
-    :param tokenizer: tokenizer
-    :param max_length: maximal tokenization length
-    :param label2id: a mapping from labels ("B-FOOD", "I-FOOD", ...) to ids
-    (0, 1, ...)
-    :param only_first_token: whether to label only first subword of a word,
-    eg. Suppose "chicken" is split into "chic", "##ken". Then if True, it will
-    have [1, -100], if False [1, 1]. -100
-    is omitted in Pytorch loss function
-    :return: a dictionary with tokenized recipes ingredients with/without
-    associated token labels
+    Tokenizes ingredients and aligns entity labels with tokens.
+
+    Arguments:
+        ingredients (list): List of lists of words from recipe ingredients
+        entities (list): List of lists of entities from recipe ingredients
+        tokenizer: Tokenizer to use for tokenization
+        max_length (int): Maximal tokenization length
+        label2id (dict): A mapping from labels ("B-FOOD", "I-FOOD", ...) to ids
+            (0, 1, ...)
+        only_first_token (bool): Whether to label only first subword of a word.
+            E.g. if "chicken" is split into "chic", "##ken", then if True, it will
+            have [1, -100], if False [1, 1]. -100 is omitted in Pytorch loss function
+
+    Returns:
+        dict: A dictionary with tokenized recipes ingredients with/without
+            associated token labels
     """
-    tokenized_data = tokenizer(ingredients, truncation=True, max_length=max_length,
-                               is_split_into_words=True)
+    tokenized_data = tokenizer(
+        ingredients, truncation=True, max_length=max_length, is_split_into_words=True
+    )
 
     labels = []
     ingredients_words_beginnings = []  # mark all first subwords,
@@ -133,8 +167,11 @@ def tokenize_and_align_labels(ingredients, entities, tokenizer, max_length,
                 elif word_idx != previous_word_idx:
                     new_label = label2id[entities[recipe_idx][word_idx]]
                 else:
-                    new_label = -100 if only_first_token \
+                    new_label = (
+                        -100
+                        if only_first_token
                         else label2id[entities[recipe_idx][word_idx]]
+                    )
                 label_ids.append(new_label)
             previous_word_idx = word_idx
 
@@ -153,6 +190,15 @@ def tokenize_and_align_labels(ingredients, entities, tokenizer, max_length,
 
 
 def tokenize_ingredients(ingredients):
+    """
+    Tokenizes a string of ingredients using spaCy.
+
+    Arguments:
+        ingredients (str): String of ingredients
+
+    Returns:
+        list: List of tokenized ingredients
+    """
     doc = NLP(ingredients)
     tokenized_ingredients = [token.text for token in doc]
     return tokenized_ingredients
@@ -160,14 +206,19 @@ def tokenize_ingredients(ingredients):
 
 def prepare_ingredients_for_prediction(ingredients):
     """
-    Prepares ingredients for entities extraction.
-    :param ingredients: this argument should be one of the following:
-    * one list of ingredients (str): "2 carrots..."
-    * mulitiple lists of ingredients (list -> str): [2 carrots...,
-    one tablespoon of sugar...] (each element is from a different recipe)
-    * multiple lists of tokenized ingredients (list -> list -> str):
-    [[2, carrots, ...], [one, tablespoon, of, sugar], ...] (each element is
-    from a different recipe)
+    Prepares ingredients for entity extraction, handling different input formats.
+
+    Arguments:
+        ingredients: Input can be:
+            * one string of ingredients (str): "2 carrots..."
+            * multiple lists of ingredients (list -> str): ["2 carrots...",
+              "one tablespoon of sugar..."] (each element is from a different recipe)
+            * multiple lists of tokenized ingredients (list -> list -> str):
+              [["2", "carrots", ...], ["one", "tablespoon", "of", "sugar"], ...]
+              (each element is from a different recipe)
+
+    Returns:
+        list: List of lists of tokenized ingredients with newlines replaced by NEWLINE_CHAR
     """
     if isinstance(ingredients, list):
         if isinstance(ingredients[0], str):  # list of ingredients
@@ -176,13 +227,15 @@ def prepare_ingredients_for_prediction(ingredients):
             ingredients = ingredients
         else:
             raise ValueError(f"{type(ingredients[0])} is not supported!")
-        
+
     elif isinstance(ingredients, str):
         ingredients = [tokenize_ingredients(ingredients)]
 
     else:
         raise ValueError(f"{type(ingredients)} is not supported!")
-    
-    ingredients = [[NEWLINE_CHAR if token == "\n" else token for token in ingreds]
-            for ingreds in ingredients]
+
+    ingredients = [
+        [NEWLINE_CHAR if token == "\n" else token for token in ingreds]
+        for ingreds in ingredients
+    ]
     return ingredients
