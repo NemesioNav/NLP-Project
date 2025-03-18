@@ -1,1 +1,7 @@
+accelerate
+datasets
+nervaluate
+scikit-learn
+spacy
+torch
 transformers
