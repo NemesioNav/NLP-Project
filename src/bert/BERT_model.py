@@ -1,4 +1,3 @@
-import argparse
 import os
 
 from BERT_utils import (
@@ -52,7 +51,6 @@ class TastyModel:
         )
 
         model_class = AutoModelForTokenClassification
-        # model_class = BertForTokenClassification
 
         model = model_class.from_pretrained(
             model_name_or_path,
