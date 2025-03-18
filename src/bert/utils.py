@@ -31,7 +31,7 @@ def prepare_data(taste_set, entities_format="spans", discontinuous=False):
     elif isinstance(taste_set, str) and os.path.exists(taste_set):
         df = pd.read_csv(taste_set)
     else:
-        raise ValueError('Incorret TASTEset format!')
+        raise ValueError('Incorrect TASTEset format!')
 
     all_ingredients = df["ingredients"].to_list()
     all_entities = []
