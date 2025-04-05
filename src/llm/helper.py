@@ -184,9 +184,9 @@ class LLMEntityExtractor:
             return self.eval_variable_size(data, batch_size=batch_size)
         metrics = Metrics()
         metrics.reset()
-        for position in tqdm(range(0, len(data), 10)):
-            chunk = data[position : position + 10]
-            assert len(chunk) > 0
+        for position in tqdm(range(0, len(data), batch_size)):
+            chunk = data[position:position+batch_size]
+            assert len(chunk)>0
             self.eval_step(chunk, metrics)
         return metrics.get_metrics()
 

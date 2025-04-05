@@ -1,0 +1,83 @@
+{
+  "f1": {
+    "FOOD": {
+      "confidence_interval": [
+        0.5385990588607994,
+        0.6418810808824977
+      ]
+    },
+    "QUANTITY": {
+      "confidence_interval": [
+        0.6637560676800287,
+        0.7740974477415976
+      ]
+    },
+    "UNIT": {
+      "confidence_interval": [
+        0.6375696958204522,
+        0.75674687649612
+      ]
+    },
+    "PROCESS": {
+      "confidence_interval": [
+        0.3068675089513092,
+        0.45383245774865744
+      ]
+    },
+    "PHYSICAL_QUALITY": {
+      "confidence_interval": [
+        0.19474595934340463,
+        0.32238391078646544
+      ]
+    },
+    "COLOR": {
+      "confidence_interval": [
+        0.0657718519250525,
+        0.17422814807494746
+      ]
+    },
+    "TASTE": {
+      "confidence_interval": [
+        0.007299196319921035,
+        0.07270080368007895
+      ]
+    },
+    "PURPOSE": {
+      "confidence_interval": [
+        0,
+        0.0433625825985766
+      ]
+    },
+    "PART": {
+      "confidence_interval": [
+        0,
+        0.036528834706387556
+      ]
+    },
+    "TRADE_NAME": {
+      "confidence_interval": [
+        0.004883198159843463,
+        0.06311680184015653
+      ]
+    },
+    "DIET": {
+      "confidence_interval": [
+        0.0,
+        0.0
+      ]
+    },
+    "EXAMPLE": {
+      "confidence_interval": [
+        0.0,
+        0.0
+      ]
+    },
+    "all": {
+      "confidence_interval": [
+        0.5789358751590307,
+        0.672558498545997
+      ]
+    }
+  },
+  "N": 100
+}
